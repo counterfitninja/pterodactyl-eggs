@@ -1,0 +1,79 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2022-11-17T17:15:08+00:00",
+    "name": "Fabric - Geyser - Floodgate",
+    "author": "accounts@bofanodes.io",
+    "description": "Fabric is a modular modding toolchain targeting Minecraft 1.14 and above, including snapshots.",
+    "features": [
+        "eula",
+        "java_version",
+        "pid_limit"
+    ],
+    "docker_images": {
+        "ghcr.io\/pterodactyl\/yolks:java_17": "ghcr.io\/pterodactyl\/yolks:java_17",
+        "ghcr.io\/pterodactyl\/yolks:java_16": "ghcr.io\/pterodactyl\/yolks:java_16",
+        "ghcr.io\/pterodactyl\/yolks:java_11": "ghcr.io\/pterodactyl\/yolks:java_11",
+        "ghcr.io\/pterodactyl\/yolks:java_8": "ghcr.io\/pterodactyl\/yolks:java_8"
+    },
+    "file_denylist": [],
+    "startup": "java -Xms128M -Xmx{{SERVER_MEMORY}}M -jar {{SERVER_JARFILE}}",
+    "config": {
+        "files": "{\r\n    \"server.properties\": {\r\n        \"parser\": \"properties\",\r\n        \"find\": {\r\n            \"server-ip\": \"0.0.0.0\",\r\n            \"enable-query\": \"true\",\r\n            \"server-port\": \"{{server.build.default.port}}\"\r\n        }\r\n    }\r\n}",
+        "startup": "{\r\n    \"done\": \")! For help, type \",\r\n    \"userInteraction\": [\r\n        \"Go to eula.txt for more info.\"\r\n    ]\r\n}",
+        "logs": "{\r\n    \"custom\": false,\r\n    \"location\": \"logs\/latest.log\"\r\n}",
+        "stop": "stop"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/bash\r\n# Fabric MC Installation Script\r\n#\r\n# Server Files: \/mnt\/server\r\napt update\r\napt install -y curl jq unzip dos2unix wget\r\nmkdir -p \/mnt\/server\r\ncd \/mnt\/server\r\n\r\n# Enable snapshots\r\nif [ -z \"$MC_VERSION\" ] || [ \"$MC_VERSION\" == \"latest\" ]; then\r\n  MC_VERSION=$(curl -sSL https:\/\/meta.fabricmc.net\/v2\/versions\/game | jq -r '.[] | select(.stable== true )|.version' | head -n1)\r\nelif [ \"$MC_VERSION\" == \"snapshot\" ]; then\r\n  MC_VERSION=$(curl -sSL https:\/\/meta.fabricmc.net\/v2\/versions\/game | jq -r '.[] | select(.stable== false )|.version' | head -n1)\r\nfi\r\n\r\nif [ -z \"$FABRIC_VERSION\" ] || [ \"$FABRIC_VERSION\" == \"latest\" ]; then\r\n  FABRIC_VERSION=$(curl -sSL https:\/\/meta.fabricmc.net\/v2\/versions\/installer | jq -r '.[0].version')\r\nfi\r\n\r\nif [ -z \"$LOADER_VERSION\" ] || [ \"$LOADER_VERSION\" == \"latest\" ]; then\r\n  LOADER_VERSION=$(curl -sSL https:\/\/meta.fabricmc.net\/v2\/versions\/loader | jq -r '.[] | select(.stable== true )|.version' | head -n1)\r\nelif [ \"$LOADER_VERSION\" == \"snapshot\" ]; then\r\n  LOADER_VERSION=$(curl -sSL https:\/\/meta.fabricmc.net\/v2\/versions\/loader | jq -r '.[] | select(.stable== false )|.version' | head -n1)\r\nfi\r\n\r\n#Fabric API installer. \r\nwget -O mods\/fabric-api.jar \"$(curl -s https:\/\/api.github.com\/repos\/FabricMC\/fabric\/releases\/latest |  jq .assets[0].browser_download_url | sed -e 's\/^\"\/\/' -e 's\/\"$\/\/')\"\r\n\r\n\r\nwget -O fabric-installer.jar https:\/\/maven.fabricmc.net\/net\/fabricmc\/fabric-installer\/$FABRIC_VERSION\/fabric-installer-$FABRIC_VERSION.jar\r\njava -jar fabric-installer.jar server -mcversion $MC_VERSION -loader $LOADER_VERSION -downloadMinecraft\r\necho -e \"Install Complete\"\r\n\r\n\r\necho -e \"Downloading Geyser and Floodgate\"\r\nmkdir -p mods\/Geyser-fabric\/\r\ncurl -o mods\/Geyser-fabric.jar https:\/\/ci.opencollab.dev\/\/job\/GeyserMC\/job\/Geyser\/job\/master\/lastSuccessfulBuild\/artifact\/bootstrap\/fabric\/build\/libs\/Geyser-Fabric.jar\r\ncurl -o mods\/floodgate-fabric.jar https:\/\/ci.opencollab.dev\/job\/GeyserMC\/job\/Floodgate-Fabric\/job\/master\/lastSuccessfulBuild\/artifact\/build\/libs\/floodgate-fabric.jar\r\nif [[ ! -f \"mods\/Geyser-fabric\/config.yml\" ]]; then\r\necho -e \"Downloading default Geyser config\"\r\ncurl -o mods\/Geyser-fabric\/config.yml https:\/\/raw.githubusercontent.com\/GeyserMC\/Geyser\/master\/core\/src\/main\/resources\/config.yml\r\nsed -i 's\/: online\/: floodgate\/g' mods\/Geyser-fabric\/config.yml\r\nfi\r\n\r\necho -e \"Downloading Phospher, Lithium and sodium\"\r\nwget -O mods\/phosphor-fabric.jar \"$(curl -s https:\/\/api.github.com\/repos\/CaffeineMC\/sodium-fabric\/releases\/latest |  jq .assets[1].browser_download_url | sed -e 's\/^\"\/\/' -e 's\/\"$\/\/')\"\r\nwget -O mods\/sodium-fabric.jar \"$(curl -s https:\/\/api.github.com\/repos\/CaffeineMC\/sodium-fabric\/releases\/latest |  jq .assets[1].browser_download_url | sed -e 's\/^\"\/\/' -e 's\/\"$\/\/')\"\r\nwget -O mods\/lithium-fabric.jar \"$(curl -s https:\/\/api.github.com\/repos\/CaffeineMC\/lithium-fabric\/releases\/latest |  jq .assets[1].browser_download_url | sed -e 's\/^\"\/\/' -e 's\/\"$\/\/')\"\r\nwget -O mods\/lithium-fabric-api.jar \"$(curl -s https:\/\/api.github.com\/repos\/CaffeineMC\/lithium-fabric\/releases\/latest |  jq .assets[1].browser_download_url | sed -e 's\/^\"\/\/' -e 's\/\"$\/\/')\"\r\n\r\n\r\n#curl -o mods\/phosphor-fabric.jar https:\/\/github.com\/CaffeineMC\/phosphor-fabric\/releases\/download\/mc1.19.x-0.8.1\/phosphor-fabric-mc1.19.x-0.8.1.jar\r\n#curl -o mods\/sodium-fabric.jar https:\/\/github.com\/CaffeineMC\/sodium-fabric\/releases\/download\/mc1.19.2-0.4.4\/sodium-fabric-mc1.19.2-0.4.4+build.18.jar\r\n#curl -o mods\/lithium-fabric.jar https:\/\/github.com\/CaffeineMC\/lithium-fabric\/releases\/download\/mc1.19.2-0.10.1\/lithium-fabric-mc1.19.2-0.10.1.jar\r\n#curl -o mods\/lithium-fabric-api.jar https:\/\/github.com\/CaffeineMC\/lithium-fabric\/releases\/download\/mc1.19.2-0.10.1\/lithium-fabric-mc1.19.2-0.10.1-api.jar",
+            "container": "openjdk:11-jdk-slim",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Server Jar File",
+            "description": "The name of the server jarfile to run the server with.",
+            "env_variable": "SERVER_JARFILE",
+            "default_value": "fabric-server-launch.jar",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|regex:\/^([\\w\\d._-]+)(\\.jar)$\/",
+            "field_type": "text"
+        },
+        {
+            "name": "Minecraft Version",
+            "description": "The version of Minecraft to install. Use \"latest\" to install the latest version, or use \"snapshot\" to install the latest snapshot.",
+            "env_variable": "MC_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|between:3,15",
+            "field_type": "text"
+        },
+        {
+            "name": "Fabric Version",
+            "description": "The version of Fabric to install.",
+            "env_variable": "FABRIC_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|between:3,15",
+            "field_type": "text"
+        },
+        {
+            "name": "Fabric Loader Version",
+            "description": "The version of Fabric Loader to install.",
+            "env_variable": "LOADER_VERSION",
+            "default_value": "latest",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|between:3,15",
+            "field_type": "text"
+        }
+    ]
+}
